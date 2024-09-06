@@ -1,0 +1,4 @@
+.env
+config.json
+.gitignore
+node_modules

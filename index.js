@@ -48,12 +48,23 @@ async function deployCommands() {
     const rest = new REST().setToken(token);
 
     try {
+
         console.log(`Started refreshing ${commands.length} application (/) commands.`);
-        const data = await rest.put(
-            Routes.applicationGuildCommands(clientID, guildID),
-            { body: commands }
-        );
-        console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+        const guilds = client.guilds.cache.map(guild => guild.id);
+
+        for (const id of guilds) {
+            try {
+                const data = await rest.put(
+                    Routes.applicationCommands(clientID, id),
+                    {body : commands}
+                );
+                console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+            } catch (error) {
+                console.log(`Error deploying command for ${id}`, error);
+            }
+        }
+
+        
     } catch (error) {
         console.error('Error deploying commands:', error);
     }
@@ -61,7 +72,6 @@ async function deployCommands() {
 
 client.once("ready", async () => {
     console.log(`Bot is ready as ${client.user.tag}!`);
-    guildID = client.guilds.cache.first()?.id;
     await loadCommands();
     await deployCommands();
     //await player.extractors.loadDefault();

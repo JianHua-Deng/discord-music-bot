@@ -17,7 +17,7 @@ module.exports = {
 
         const query = interaction.options.getString('query'); //Getting the query string
 
-        // let's defer the interaction as things can take time to process
+        // defer the interaction as things can take time to process
         await interaction.deferReply();
 
         try {

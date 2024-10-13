@@ -1,8 +1,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, GatewayIntentBits, REST, Routes, Collection } = require("discord.js");
-const { Player } = require("discord-player");
-const { YoutubeiExtractor } = require("discord-player-youtubei")
+const { Player, useQueue } = require("discord-player");
+const { YoutubeiExtractor } = require("discord-player-youtubei");
+const { validQueue, inChannel } = require('./utils/utils');
+const { createActionRow } = require('./utils/playbackButtons');
 require('dotenv').config()
 
 const token = process.env.TOKEN;
@@ -52,6 +54,7 @@ async function deployCommands() {
         console.log(`Started refreshing ${commands.length} application (/) commands.`);
         const guilds = client.guilds.cache.map(guild => guild.id);
 
+        //Deploying commands to all the servers the bot is in
         for (const id of guilds) {
             try {
                 const data = await rest.put(
@@ -78,24 +81,61 @@ client.once("ready", async () => {
 });
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
+    if (interaction.isCommand()){
+        const command = client.commands.get(interaction.commandName);
 
-    const command = client.commands.get(interaction.commandName);
-
-    if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found.`);
-        return;
-    }
-
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-        } else {
-            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        if (!command) {
+            console.error(`No command matching ${interaction.commandName} was found.`);
+            return;
         }
+    
+        try {
+            await command.execute(interaction);
+        } catch (error) {
+            console.error(error);
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+            } else {
+                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            }
+        }
+
+    }else if (interaction.isButton()){
+
+            const {customId} = interaction;
+            const queue = useQueue(interaction.guild.id);
+            const channel = interaction.member.voice.channel;
+            
+            if(!validQueue(queue) || !inChannel(channel)){
+                return
+            }
+
+            switch (customId){
+                case 'playpause':
+                    try {
+                        queue.node.setPaused(!queue.node.isPaused());
+                        await interaction.update({components : [createActionRow(interaction.guild.id)]});
+                    } catch (error) {
+                        console.error(error);
+                        await interaction.reply({content: 'Failed to Pause/Resume the track', ephemeral: true});
+                    }
+                    break;
+                case 'skip':
+                    try {
+                        const currentSong = queue.currentTrack;
+                        queue.node.skip();
+                        await interaction.reply(`Skipped ${currentSong.title}`)
+                    } catch (error) {
+                        console.error(error);
+                        await interaction.reply({content: 'Failed to skip the track', ephemeral: true});
+                    }
+                    break;
+                default:
+                    console.log('Unknown button pressed:', customId);
+                    return interaction.reply({ content: 'Unknown button interaction', ephemeral: true });
+            }
+
+        
     }
 });
 
@@ -112,7 +152,16 @@ player.events.on('playerError', (queue, error) => {
 });
 
 player.events.on('playerStart', (queue, track) => {
-    queue.metadata.channel.send(`Started playing **${track.title}**!`);
+    const channel = queue.metadata.channel;
+
+    try {
+        return channel.send({
+            content: `Now playing **${track.title}**`,
+            components: [createActionRow(queue.guild.id)] // Update buttons dynamically
+        });
+    } catch (error) {
+        console.error('Failed to update buttons:', error);
+    }
 });
 
 client.login(token).catch(e => {
@@ -122,40 +171,3 @@ client.login(token).catch(e => {
         console.error('❌ An error occurred while trying to login to the bot! ❌\n', e);
     }
 });
-
-/*
-// Helper function to load commands
-async function getCommands() {
-    const commands = [];
-    const commandsPath = path.join(__dirname, 'commands');
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const stats = fs.statSync(filePath);
-
-        if (stats.isDirectory()) {
-            // If it's a directory, read the commands inside it
-            const subFiles = fs.readdirSync(filePath).filter(subFile => subFile.endsWith('.js'));
-            for (const subFile of subFiles) {
-                const subFilePath = path.join(filePath, subFile);
-                const command = require(subFilePath);
-                if ('data' in command && 'execute' in command) {
-                    commands.push(command.data.toJSON());
-                } else {
-                    console.log(`[WARNING] The command at ${subFilePath} is missing a required "data" or "execute" property.`);
-                }
-            }
-        } else {
-            // If it's a file, treat it as a command file
-            const command = require(filePath);
-            if ('data' in command && 'execute' in command) {
-                commands.push(command.data.toJSON());
-            } else {
-                console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-            }
-        }
-    }
-    return commands;
-}
-*/

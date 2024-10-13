@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { useQueue } = require('discord-player');
-const { inChannel, validQueue } = require('../utils/utils.js')
+const { inChannel, validQueue } = require('../utils/utils.js');
+const { createActionRow } = require('../utils/playbackButtons.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,7 +22,10 @@ module.exports = {
 
         try {
             queue.node.setPaused(!queue.node.isPaused());
-            return interaction.reply(queue.node.isPaused() ? `Paused ${queue.currentTrack}` : `Playing ${queue.currentTrack}`);
+            await interaction.update({
+                content : queue.node.isPaused() ? `Paused ${queue.currentTrack}` : `Playing ${queue.currentTrack}`,
+                components : [createActionRow(interaction.guild.id)]
+            });
         } catch (error) {
             return interaction.reply("Something went wrong as I was trying to pause");
         }

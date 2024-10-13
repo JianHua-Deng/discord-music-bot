@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { useMainPlayer } = require('discord-player');
+const { createActionRow } = require('../utils/playbackButtons');
+const { inChannel, validQueue } = require('../utils/utils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -27,11 +29,13 @@ module.exports = {
                     metadata: interaction // we can access this metadata object using queue.metadata later on
                 }
             });
-    
-            return interaction.followUp(`**${track.title}** enqueued!`);
+
+            await interaction.followUp({
+                content: `**${track.title}** enqueued!`,
+            });
         } catch (e) {
             // let's return error if something failed
-            return interaction.followUp(`Something went wrong: ${e}`);
+            await interaction.followUp(`Something went wrong: ${e}`);
         }
     }
 };

@@ -14,7 +14,6 @@ module.exports = {
             return interaction.reply("You are not even connected to a voice channel, what are you trying to skip lil bro 🫵😂");
         }
 
-        console.log(interaction.guild.id)
         const queue = useQueue(interaction.guild.id);
         
 

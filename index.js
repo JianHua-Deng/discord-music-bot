@@ -3,7 +3,8 @@ const path = require('node:path');
 const { Client, GatewayIntentBits, REST, Routes, Collection } = require("discord.js");
 const { Player, useQueue } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
-const { validQueue, inChannel } = require('./utils/utils');
+const { ytext } = require("youtube-ext");
+const { validQueue, inChannel, setRepeatMode } = require('./utils/utils');
 const { createActionRow } = require('./utils/playbackButtons');
 require('dotenv').config()
 
@@ -24,7 +25,8 @@ const player = new Player(client, {
     ytdlOptions: {
         quality: "highestaudio",
         highWaterMark: 1 << 25
-    }
+    },
+    connectionTimeout: 120000, // Increase timeout (2 minutes)
 });
 
 // Register the YouTube extractor
@@ -120,6 +122,7 @@ client.on('interactionCreate', async interaction => {
                         await interaction.reply({content: 'Failed to Pause/Resume the track', ephemeral: true});
                     }
                     break;
+
                 case 'skip':
                     try {
                         const currentSong = queue.currentTrack;
@@ -129,7 +132,18 @@ client.on('interactionCreate', async interaction => {
                         console.error(error);
                         await interaction.reply({content: 'Failed to skip the track', ephemeral: true});
                     }
+
                     break;
+
+                case 'loopSong':
+                    await setRepeatMode(interaction, queue, 'song', 'update');
+                    break;
+
+                case 'loopPlaylist':
+
+                    await setRepeatMode(interaction, queue, 'playlist', 'update')
+                    break;
+
                 default:
                     console.log('Unknown button pressed:', customId);
                     return interaction.reply({ content: 'Unknown button interaction', ephemeral: true });
@@ -141,7 +155,7 @@ client.on('interactionCreate', async interaction => {
 
 // Error handling
 
-player.events.on('debug', console.log);
+//player.events.on('debug', console.log);
 
 player.events.on('error', (queue, error) => {
     console.log(`[${queue.guild.name}] Error emitted from the queue: ${error.message}`);

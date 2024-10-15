@@ -3,7 +3,6 @@ const path = require('node:path');
 const { Client, GatewayIntentBits, REST, Routes, Collection } = require("discord.js");
 const { Player, useQueue } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
-const { ytext } = require("youtube-ext");
 const { validQueue, inChannel, setRepeatMode, clearPlaylist, disablePreviousMsgBtn } = require('./utils/utils');
 const { createActionRow } = require('./utils/playbackButtons');
 require('dotenv').config()
@@ -31,6 +30,7 @@ const player = new Player(client, {
 
 // Register the YouTube extractor
 player.extractors.register(YoutubeiExtractor, {})
+//await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
 
 async function loadCommands() {
     const commandsPath = path.join(__dirname, 'commands');

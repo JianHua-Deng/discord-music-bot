@@ -28,6 +28,8 @@ module.exports = {
                 nodeOptions: {
                     metadata: {
                         channel: interaction.channel,
+                        lastMessage: null, //initially to be none
+                        lastTrack: '',
                     },
                     bufferingTimeout: 15000,
                     leaveOnStop: false,

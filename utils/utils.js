@@ -18,10 +18,14 @@ function validQueue(queue){
 };
 
 const replyOrUpdate = async (interaction, replyMode, reply) => {
-    if(replyMode === 'reply'){
-        await interaction.reply(`${reply}`);
-    }else{
-        await interaction.update({components : [createActionRow(interaction.guild.id)]});
+    try{
+        if(replyMode === 'reply'){
+            await interaction.reply({content : `${reply}`, ephemeral: true});
+        }else{
+            await interaction.update({components : [createActionRow(interaction.guild.id, false)]});
+        }
+    } catch (error){
+        return interaction.reply(`Failed to reply: ${error.message}`);
     }
 };
 
@@ -53,8 +57,32 @@ const setRepeatMode = async (interaction, queue, repeatType, replyMode) => {
     }
 }
 
+const clearPlaylist = async (interaction, queue, replyMode) => {
+    try{
+        queue.clear();
+        await replyOrUpdate(interaction, replyMode, 'Cleared current Playlist')
+    } catch (error){
+        return interaction.reply(`Failed to clear playlist: ${error.message}`);
+    }
+}
+
+//Disable the buttons of previous messaged passed in from
+const disablePreviousMsgBtn = async (queue) => {
+    if (queue.metadata.lastMessage){
+        try {
+            await queue.metadata.lastMessage.edit({
+                components: [createActionRow(queue.guild.id, true)] // Pass true to disable buttons
+            });
+        } catch (error) {
+            console.error('Failed to disable buttons from the previous message:', error);
+        }
+    }
+}
+
 module.exports = {
     inChannel,
     validQueue,
-    setRepeatMode
+    setRepeatMode,
+    clearPlaylist,
+    disablePreviousMsgBtn,
 };

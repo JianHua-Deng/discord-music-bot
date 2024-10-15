@@ -24,10 +24,10 @@ module.exports = {
             queue.node.setPaused(!queue.node.isPaused());
             await interaction.update({
                 content : queue.node.isPaused() ? `Paused ${queue.currentTrack}` : `Playing ${queue.currentTrack}`,
-                components : [createActionRow(interaction.guild.id)]
+                components : [createActionRow(interaction.guild.id, false)]
             });
         } catch (error) {
-            return interaction.reply("Something went wrong as I was trying to pause");
+            return interaction.reply(`Failed to clear playlist: ${error.message}`);
         }
 
 

@@ -4,7 +4,7 @@ const { Client, GatewayIntentBits, REST, Routes, Collection } = require("discord
 const { Player, useQueue } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
 const { ytext } = require("youtube-ext");
-const { validQueue, inChannel, setRepeatMode } = require('./utils/utils');
+const { validQueue, inChannel, setRepeatMode, clearPlaylist, disablePreviousMsgBtn } = require('./utils/utils');
 const { createActionRow } = require('./utils/playbackButtons');
 require('dotenv').config()
 
@@ -116,7 +116,7 @@ client.on('interactionCreate', async interaction => {
                 case 'playpause':
                     try {
                         queue.node.setPaused(!queue.node.isPaused());
-                        await interaction.update({components : [createActionRow(interaction.guild.id)]});
+                        await interaction.update({components : [createActionRow(interaction.guild.id, false)]});
                     } catch (error) {
                         console.error(error);
                         await interaction.reply({content: 'Failed to Pause/Resume the track', ephemeral: true});
@@ -144,6 +144,10 @@ client.on('interactionCreate', async interaction => {
                     await setRepeatMode(interaction, queue, 'playlist', 'update')
                     break;
 
+                case 'clear':
+                    await clearPlaylist(interaction, queue, 'update');
+                    break;
+
                 default:
                     console.log('Unknown button pressed:', customId);
                     return interaction.reply({ content: 'Unknown button interaction', ephemeral: true });
@@ -165,17 +169,30 @@ player.events.on('playerError', (queue, error) => {
     console.log(`[${queue.guild.name}] Error emitted from the connection: ${error.message}`);
 });
 
-player.events.on('playerStart', (queue, track) => {
+player.events.on('playerStart', async (queue, track) => {
     const channel = queue.metadata.channel;
 
-    try {
-        return channel.send({
-            content: `Now playing **${track.title}**`,
-            components: [createActionRow(queue.guild.id)] // Update buttons dynamically
-        });
-    } catch (error) {
-        console.error('Failed to update buttons:', error);
-    }
+        // Find the last message with buttons and disable them
+        await disablePreviousMsgBtn(queue);
+
+        //send the message
+        try {
+            const message = await channel.send({
+                content: `Now playing **${track.title}**`,
+                components: [createActionRow(queue.guild.id, false)]
+            });
+            queue.metadata.lastMessage = message;
+        } catch (error) {
+            console.error('Failed to update buttons:', error);
+            return interaction.reply({ content: 'Failed to disable buttons from the previous message:', ephemeral: true });
+        }
+    
+});
+
+
+player.events.on('disconnect', async (queue, track) => {
+    // Disable all buttons in the previous message
+    await disablePreviousMsgBtn(queue);
 });
 
 client.login(token).catch(e => {

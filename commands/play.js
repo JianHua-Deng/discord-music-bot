@@ -30,6 +30,7 @@ module.exports = {
                         channel: interaction.channel,
                         lastMessage: null, //initially to be none
                         lastTrack: '',
+                        requester: interaction.user,
                     },
                     bufferingTimeout: 15000,
                     leaveOnStop: false,

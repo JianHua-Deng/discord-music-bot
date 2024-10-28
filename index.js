@@ -5,6 +5,7 @@ const { Player, useQueue } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
 const { validQueue, inChannel, setRepeatMode, clearPlaylist, disablePreviousMsgBtn } = require('./utils/utils');
 const { createActionRow } = require('./utils/playbackButtons');
+const { EmbedBuilder } = require('discord.js');
 require('dotenv').config()
 
 const token = process.env.TOKEN;
@@ -83,6 +84,7 @@ client.once("ready", async () => {
 });
 
 client.on('interactionCreate', async interaction => {
+    //Determine if the interaction is through commands or a button
     if (interaction.isCommand()){
         const command = client.commands.get(interaction.commandName);
 
@@ -172,20 +174,31 @@ player.events.on('playerError', (queue, error) => {
 player.events.on('playerStart', async (queue, track) => {
     const channel = queue.metadata.channel;
 
-        // Find the last message with buttons and disable them
-        await disablePreviousMsgBtn(queue);
+    // Find the last message with buttons and disable them
+    await disablePreviousMsgBtn(queue);
 
-        //send the message
-        try {
-            const message = await channel.send({
-                content: `Now playing **${track.title}**`,
-                components: [createActionRow(queue.guild.id, false)]
-            });
-            queue.metadata.lastMessage = message;
-        } catch (error) {
-            console.error('Failed to update buttons:', error);
-            return interaction.reply({ content: 'Failed to disable buttons from the previous message:', ephemeral: true });
-        }
+    //Creating embed message to send
+    const embed = new EmbedBuilder()
+        .setColor(0x0099FF)
+        .setTitle(track.title)
+        .setURL(track.url)
+        .setAuthor({name: track.author})
+        .setDescription(`Now playing **${track.title}**`)
+        .setThumbnail(track.thumbnail)
+        .addFields({name: 'Duration', value: track.duration, inline: true})
+        .setFooter({text: `Requested by ${queue.metadata.requester.username}`, iconURL: queue.metadata.requester.avatarURL() })
+
+    //send the message
+    try {
+        const message = await channel.send({
+            embeds: [embed],
+            components: [createActionRow(queue.guild.id, false)]
+        });
+        queue.metadata.lastMessage = message;
+    } catch (error) {
+        console.error('Failed to update buttons:', error);
+        return interaction.reply({ content: 'Failed to disable buttons from the previous message:', ephemeral: true });
+    }
     
 });
 

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { useQueue } = require('discord-player');
 const { inChannel, validQueue } = require('../utils/utils.js');
 
@@ -22,9 +22,21 @@ module.exports = {
         }
 
         try {
+
             let currentSong = queue.currentTrack;
-            queue.node.skip();
-            return interaction.reply(`Skipped ${currentSong.title}`);
+
+            const embed = new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setTitle(currentSong.title)
+            .setURL(currentSong.url)
+            .setAuthor({ 
+                name: `Skipped ${currentSong.title}`,
+                iconURL: interaction.user.avatarURL()
+            })
+            .setThumbnail(currentSong.thumbnail)
+
+            await queue.node.skip();
+            await interaction.reply({embeds: [embed]});
         } catch (error){ 
             return interaction.reply(`Failed to skip Song: ${error.message}`);
         }

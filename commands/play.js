@@ -1,8 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { useMainPlayer, useQueue } = require('discord-player');
 const { createActionRow } = require('../utils/playbackButtons');
 const { inChannel, validQueue } = require('../utils/utils.js');
-
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('play')
@@ -39,16 +38,20 @@ module.exports = {
                 }
             });
 
-            if(validQueue(queue)){
-                await interaction.followUp({
-                    content: `Enqueued **${track.title}** as the #${queue.tracks.size} in the queue`,
-                });
-            } else {
-                await interaction.followUp({
-                    content: `Added **${track.title}** to the start of the queue`,
-                });
-            }
+            const embed = new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setTitle(track.title)
+            .setURL(track.url)
+            .setAuthor({ 
+                name: `Song added to the queue as #${validQueue(queue) ? queue.tracks.size : 0}`,
+                iconURL: interaction.user.avatarURL()
+            })
+            .setThumbnail(track.thumbnail)
+            .addFields({ name: 'Duration', value: track.duration, inline: true });
 
+            await interaction.followUp({
+                embeds: [embed],
+            });
 
         } catch (e) {
             // let's return error if something failed

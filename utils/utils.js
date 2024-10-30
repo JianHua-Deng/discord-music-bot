@@ -10,6 +10,7 @@ function inChannel(channel){
 
 };
 
+//Check if queue has been initialized, and if its playing
 function validQueue(queue){
     if (!queue || !queue.isPlaying()){
         return false;

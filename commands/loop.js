@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { useQueue, QueueRepeatMode } = require('discord-player');
+const { useQueue} = require('discord-player');
 const { inChannel, validQueue, setRepeatMode } = require('../utils/utils.js');
 
 module.exports = {

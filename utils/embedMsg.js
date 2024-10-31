@@ -5,8 +5,8 @@ function playStartEmbedMsg(queue, track){
     .setColor(0x0099FF)
     .setTitle(track.title)
     .setURL(track.url)
-    .setAuthor({ name: track.author })
-    .setDescription(`Now playing **${track.title}**`)
+    .setAuthor({name: `Now Playing`})
+    .setDescription(`From **${track.author}**`)
     .setThumbnail(track.thumbnail)
     .addFields({ name: 'Duration', value: track.duration, inline: true })
     .setFooter({
@@ -27,7 +27,15 @@ function skipEmbedMsg(currentSong, user){
     .setThumbnail(currentSong.thumbnail);
 }
 
+function descriptionEmbed(string){
+    return new EmbedBuilder()
+    .setColor(0x0099FF)
+    .setTitle(string)
+}
+
 module.exports = {
     playStartEmbedMsg,
-    skipEmbedMsg
+    skipEmbedMsg,
+    descriptionEmbed,
+
 }

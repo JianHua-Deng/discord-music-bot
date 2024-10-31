@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { useQueue} = require('discord-player');
 const { inChannel, validQueue, setRepeatMode } = require('../utils/utils.js');
+const { descriptionEmbed } = require('../utils/embedMsg.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,17 +19,19 @@ module.exports = {
     async execute(interaction) {
         const channel = interaction.member.voice.channel;
         if (!inChannel(channel)){
-            return interaction.reply("You are not even connected to a voice channel, what are you trying to loop lil bro 🫵😂");
+            return interaction.reply({embeds: descriptionEmbed("You are not even connected to a voice channel, what are you trying to loop lil bro 🫵😂")});
         }
 
         const queue = useQueue(interaction.guild.id);
         
         if (!validQueue(queue)){
-            return interaction.reply("No Song is Currently Playing");
+            await interaction.reply({embeds: [descriptionEmbed("Nothing in queue, you looping nothin lil bro 🫵😂")]});
+            return
         }
 
         const loopType = interaction.options.getString('type');
 
-        await setRepeatMode(interaction, queue, loopType, 'reply');
+        loopStatusString = await setRepeatMode(interaction, queue, loopType);
+        await interaction.reply({embeds: [descriptionEmbed(loopStatusString)], ephemeral: true});
     }
 };

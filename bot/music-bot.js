@@ -1,4 +1,3 @@
-// MusicBot.js
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, GatewayIntentBits, REST, Routes, Collection} = require("discord.js");
@@ -6,7 +5,7 @@ const { Player, useQueue } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
 const { validQueue, inChannel, setRepeatMode, clearPlaylist, disablePreviousMsgBtn } = require('../utils/utils');
 const { createActionRow } = require('../utils/playbackButtons');
-const { skipEmbedMsg, playStartEmbedMsg } = require('../utils/embedMsg');
+const { skipEmbedMsg, playStartEmbedMsg, descriptionEmbed } = require('../utils/embedMsg');
 require('dotenv').config();
 
 class MusicBot {
@@ -159,13 +158,15 @@ class MusicBot {
                 await interaction.reply({embeds: [skipEmbedMsg(currentSong, queue.metadata.requester)]});
             },
             'loopSong': async () => {
-                await setRepeatMode(interaction, queue, 'song', 'update');
+                await setRepeatMode(interaction, queue, 'song');
+                await interaction.deferUpdate();//DeferUpdate so that we dont have to reply in order to process
             },
             'loopPlaylist': async () => {
-                await setRepeatMode(interaction, queue, 'playlist', 'update');
+                await setRepeatMode(interaction, queue, 'playlist');
+                await interaction.deferUpdate();//DeferUpdate so that we dont have to reply in order to process
             },
             'clear': async () => {
-                await clearPlaylist(interaction, queue, 'update');
+                await clearPlaylist(interaction, queue);
             }
         };
 
@@ -174,11 +175,11 @@ class MusicBot {
                 await buttonHandlers[customId]();
             } else {
                 console.log('Unknown button pressed:', customId);
-                await interaction.reply({ content: 'Unknown button interaction', ephemeral: true });
+                await interaction.reply({ embeds: ['Unknown button interaction'], ephemeral: true });
             }
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: `Failed to execute ${customId} action`, ephemeral: true });
+            await interaction.reply({ embeds: [`Failed to execute ${customId} action`], ephemeral: true });
         }
     }
 
@@ -191,7 +192,7 @@ class MusicBot {
                 embeds: [playStartEmbedMsg(queue, track)],
                 components: [createActionRow(queue.guild.id, false)]
             });
-            queue.metadata.lastMessage = message;
+            queue.metadata.latestMessage = message;
         } catch (error) {
             console.error('Failed to send track start message:', error);
         }
@@ -207,6 +208,7 @@ class MusicBot {
 
     async handleDisconnect(queue) {
         await disablePreviousMsgBtn(queue);
+        await queue.metadata.channel.send({embeds: descriptionEmbed(`No song are left in the queue, I have to leave now, I'll always be you Skibidi Pookie Bear though! 😘`)})
     }
 
     async login() {

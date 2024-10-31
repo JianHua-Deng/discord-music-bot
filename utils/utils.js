@@ -1,6 +1,7 @@
 //const { useQueue, QueueRepeatMode } = require("discord-player");
 const { QueueRepeatMode } = require('discord-player');
 const { createActionRow } = require('./playbackButtons');
+const { descriptionEmbed } = require('./embedMsg');
 
 function inChannel(channel){
     if (!channel){
@@ -18,60 +19,68 @@ function validQueue(queue){
     return true;
 };
 
-const replyOrUpdate = async (interaction, replyMode, reply) => {
-    try{
-        if(replyMode === 'reply'){
-            await interaction.reply({content : `${reply}`, ephemeral: true});
-        }else{
-            await interaction.update({components : [createActionRow(interaction.guild.id, false)]});
+const updateButtons = async (queue) => {
+    if (queue) {
+        try{
+            queue.metadata.latestMessage.edit({
+                components: [createActionRow(queue.guild.id , false)]
+            })
+        } catch (error) {
+            
         }
-    } catch (error){
-        return interaction.reply(`Failed to reply: ${error.message}`);
     }
-};
+    
+}
 
-const setRepeatMode = async (interaction, queue, repeatType, replyMode) => {
+const setRepeatMode = async (interaction, queue, repeatType) => {
     try{
         let currentSong = queue.currentTrack;
+        let loopStatus;
 
-        if (repeatType === 'song'){ 
-            if (queue.repeatMode === QueueRepeatMode.OFF){ //If type is to repeat current song AND its not in repeat mode yet
+        if (repeatType === 'song') {
+            // Toggle between TRACK and OFF for 'loop song'
+            if (queue.repeatMode === QueueRepeatMode.TRACK) {
+                queue.setRepeatMode(QueueRepeatMode.OFF);
+                loopStatus = `Stopped looping: ${currentSong.title}`;
+            } else {
                 queue.setRepeatMode(QueueRepeatMode.TRACK);
-                await replyOrUpdate(interaction, replyMode, `Loop ${currentSong.title}`);
-                
-            }else{ //Turning off repeat mode cuz its already off
-                queue.setRepeatMode(QueueRepeatMode.OFF);
-                await replyOrUpdate(interaction, replyMode, `Stopped Looping ${currentSong}`)
+                loopStatus = `Looping: ${currentSong.title}`;
             }
-
-        } else if (repeatType === 'playlist') { 
-            if (queue.repeatMode === QueueRepeatMode.OFF){
-                queue.setRepeatMode(QueueRepeatMode.QUEUE);
-                await replyOrUpdate(interaction, replyMode, `Looping current Playlist`);
-            }else{
+        } else if (repeatType === 'playlist') {
+            // Toggle between QUEUE and OFF for 'loop playlist'
+            if (queue.repeatMode === QueueRepeatMode.QUEUE) {
                 queue.setRepeatMode(QueueRepeatMode.OFF);
-                await replyOrUpdate(interaction, replyMode, `Stopped Looping current Playlist`);
+                loopStatus = "Stopped looping the playlist";
+            } else {
+                queue.setRepeatMode(QueueRepeatMode.QUEUE);
+                loopStatus = "Looping playlist";
             }
         }
+
+        //await interaction.deferUpdate();
+        // Update buttons to reflect the new repeat mode state
+        await updateButtons(queue);
+        return loopStatus; //return loopStatus in the case when user uses command to control loop mode with loop.js
+
     } catch (error) {
-        return interaction.reply(`Failed to loop Song: ${error.message}`);
+        return interaction.reply({embeds: [descriptionEmbed(`Failed to clear playlist: ${error.message}`)]});
     }
 }
 
-const clearPlaylist = async (interaction, queue, replyMode) => {
+const clearPlaylist = async (interaction, queue) => {
     try{
         queue.clear();
-        await replyOrUpdate(interaction, replyMode, 'Cleared current Playlist')
+        await interaction.reply({ embeds: [descriptionEmbed(`Cleared queue after current Song. Let me be your little pookie bear now 😘`)], ephemeral: true });
     } catch (error){
-        return interaction.reply(`Failed to clear playlist: ${error.message}`);
+        await interaction.reply({ embeds: [descriptionEmbed(`Failed to clear playlist: ${error.message}`)]});
     }
 }
 
 //Disable the buttons of previous messaged passed in from
 const disablePreviousMsgBtn = async (queue) => {
-    if (queue.metadata.lastMessage){
+    if (queue.metadata.latestMessage){
         try {
-            await queue.metadata.lastMessage.edit({
+            await queue.metadata.latestMessage.edit({
                 components: [createActionRow(queue.guild.id, true)] // Pass true to disable buttons
             });
         } catch (error) {

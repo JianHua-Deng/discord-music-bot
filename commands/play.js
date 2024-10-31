@@ -1,7 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { useMainPlayer, useQueue } = require('discord-player');
-const { createActionRow } = require('../utils/playbackButtons');
-const { inChannel, validQueue } = require('../utils/utils.js');
+const { validQueue } = require('../utils/utils.js');
+const { descriptionEmbed } = require('../utils/embedMsg.js');
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('play')
@@ -15,7 +16,7 @@ module.exports = {
         const player = useMainPlayer();
         const channel = interaction.member.voice.channel;
         const queue = useQueue(interaction.guild.id)
-        if (!channel) return interaction.reply("You are not connected to a voice channel");
+        if (!channel) return interaction.reply(descriptionEmbed("You are not even connected to a voice channel, what are you trying to skip lil bro 🫵😂"));
 
         const query = interaction.options.getString('query'); //Getting the query string
 
@@ -27,7 +28,7 @@ module.exports = {
                 nodeOptions: {
                     metadata: {
                         channel: interaction.channel,
-                        lastMessage: null, //initially to be none
+                        latestMessage: null, //initially to be none
                         lastTrack: '',
                         requester: interaction.user,
                     },
@@ -55,7 +56,7 @@ module.exports = {
 
         } catch (e) {
             // let's return error if something failed
-            await interaction.followUp(`Something went wrong: ${e}`);
+            await interaction.followUp({embeds: descriptionEmbed(`Something went wrong : ${e}`), ephemeral: true});
         }
     }
 };

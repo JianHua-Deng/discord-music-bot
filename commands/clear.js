@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { useQueue } = require('discord-player');
 const { inChannel, validQueue, setRepeatMode, clearPlaylist } = require('../utils/utils.js');
+const { descriptionEmbed } = require('../utils/embedMsg.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,15 +11,15 @@ module.exports = {
     async execute(interaction) {
         const channel = interaction.member.voice.channel;
         if (!inChannel(channel)){
-            return interaction.reply("You are not even connected to a voice channel, what are you trying to clear lil bro 🫵😂");
+            return interaction.reply({embeds:["You are not even connected to a voice channel, what are you trying to clear lil bro 🫵😂"]});
         }
 
         const queue = useQueue(interaction.guild.id);
         
         if (!validQueue(queue)){
-            return interaction.reply("No Song is Currently Playing");
+            return interaction.reply({embeds: [descriptionEmbed("No Song is Currently Playing, you clearing nothin lil bro 🫵😂")]});
         }
 
-        await clearPlaylist(interaction, queue, 'reply');
+        await clearPlaylist(interaction, queue);
     }
 };

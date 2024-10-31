@@ -16,7 +16,10 @@ module.exports = {
         const player = useMainPlayer();
         const channel = interaction.member.voice.channel;
         const queue = useQueue(interaction.guild.id)
-        if (!channel) return interaction.reply(descriptionEmbed("You are not even connected to a voice channel, what are you trying to skip lil bro 🫵😂"));
+        if (!channel){
+            await interaction.reply({embeds: [descriptionEmbed("You are not even connected to a voice channel, what are you trying to play lil bro 🫵😂")]});
+            return
+        } 
 
         const query = interaction.options.getString('query'); //Getting the query string
 

@@ -3,7 +3,7 @@ const path = require('node:path');
 const { Client, GatewayIntentBits, REST, Routes, Collection} = require("discord.js");
 const { Player, useQueue } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
-const { validQueue, inChannel, setRepeatMode, clearPlaylist, disablePreviousMsgBtn } = require('../utils/utils');
+const { validQueue, setRepeatMode, clearPlaylist, disablePreviousMsgBtn } = require('../utils/utils');
 const { createActionRow } = require('../utils/playbackButtons');
 const { skipEmbedMsg, playStartEmbedMsg, descriptionEmbed } = require('../utils/embedMsg');
 require('dotenv').config();
@@ -143,7 +143,7 @@ class MusicBot {
         const queue = useQueue(interaction.guild.id);
         const channel = interaction.member.voice.channel;
 
-        if (!validQueue(queue) || !inChannel(channel)) {
+        if (!validQueue(queue) || !channel) {
             return;
         }
 

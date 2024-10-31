@@ -3,14 +3,6 @@ const { QueueRepeatMode } = require('discord-player');
 const { createActionRow } = require('./playbackButtons');
 const { descriptionEmbed } = require('./embedMsg');
 
-function inChannel(channel){
-    if (!channel){
-        return false;
-    } 
-    return true;
-
-};
-
 //Check if queue has been initialized, and if its playing
 function validQueue(queue){
     if (!queue || !queue.isPlaying()){
@@ -90,7 +82,6 @@ const disablePreviousMsgBtn = async (queue) => {
 }
 
 module.exports = {
-    inChannel,
     validQueue,
     setRepeatMode,
     clearPlaylist,

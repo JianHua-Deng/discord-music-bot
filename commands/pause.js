@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { useQueue } = require('discord-player');
-const { inChannel, validQueue } = require('../utils/utils.js');
+const { validQueue } = require('../utils/utils.js');
 const { createActionRow } = require('../utils/playbackButtons.js');
 const { descriptionEmbed } = require('../utils/embedMsg.js');
 
@@ -11,8 +11,8 @@ module.exports = {
 
     async execute(interaction){
         const channel = interaction.member.voice.channel;
-        if (!inChannel(channel)){
-            return interaction.reply({embeds: [descriptionEmbed("What are you trying to pause, you aren't even in a voice channle lil bro 🫵😂")]});
+        if (!channel){
+            return interaction.reply({embeds: [descriptionEmbed("What are you trying to pause, you aren't even in a voice channel lil bro 🫵😂")]});
         }
 
         const queue = useQueue(interaction.guild.id);

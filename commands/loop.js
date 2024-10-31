@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { useQueue} = require('discord-player');
-const { inChannel, validQueue, setRepeatMode } = require('../utils/utils.js');
+const { validQueue, setRepeatMode } = require('../utils/utils.js');
 const { descriptionEmbed } = require('../utils/embedMsg.js');
 
 module.exports = {
@@ -18,8 +18,8 @@ module.exports = {
 
     async execute(interaction) {
         const channel = interaction.member.voice.channel;
-        if (!inChannel(channel)){
-            return interaction.reply({embeds: descriptionEmbed("You are not even connected to a voice channel, what are you trying to loop lil bro 🫵😂")});
+        if (!channel){
+            return interaction.reply({embeds: [descriptionEmbed("You are not even connected to a voice channel, what are you trying to loop lil bro 🫵😂")]});
         }
 
         const queue = useQueue(interaction.guild.id);

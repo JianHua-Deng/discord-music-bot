@@ -208,7 +208,7 @@ class MusicBot {
 
     async handleDisconnect(queue) {
         await disablePreviousMsgBtn(queue);
-        await queue.metadata.channel.send({embeds: descriptionEmbed(`No song are left in the queue, I have to leave now, I'll always be you Skibidi Pookie Bear though! 😘`)})
+        await queue.metadata.channel.send({embeds: [descriptionEmbed(`No song are left in the queue, I have to leave now, I'll always be you skibidi pookie bear though! 😘`)]});
     }
 
     async login() {

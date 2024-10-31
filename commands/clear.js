@@ -11,7 +11,7 @@ module.exports = {
     async execute(interaction) {
         const channel = interaction.member.voice.channel;
         if (!inChannel(channel)){
-            return interaction.reply({embeds:["You are not even connected to a voice channel, what are you trying to clear lil bro 🫵😂"]});
+            return interaction.reply({embeds:[descriptionEmbed("You are not even connected to a voice channel, what are you trying to clear lil bro 🫵😂")]});
         }
 
         const queue = useQueue(interaction.guild.id);

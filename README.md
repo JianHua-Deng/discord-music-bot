@@ -28,29 +28,21 @@ A feature-rich Discord music bot built with discord.js and discord-player that p
    * Click "New Application" and give it a name
    * Go to the "Bot" section and click "Add Bot"
    * Copy the bot token
+   * Go to OAuth2 and copy the client ID
    * Under "Privileged Gateway Intents", enable:
      * Server Members Intent
      * Message Content Intent
      * Voice State Intent
 
 2. Clone the repository
-```bash
-git clone https://github.com/yourusername/discord-music-bot.git
-cd discord-music-bot
-```
 
-3. Install dependencies
-```bash
-npm install
-```
-
-4. Create a `.env` file in the root directory
+3. Create a `.env` file in the root directory
 ```env
 TOKEN=your_bot_token_here
 CLIENT_ID=your_client_id_here
 ```
 
-5. Invite the bot to your server
+4. Invite the bot to your server
    * Go to OAuth2 > URL Generator in Discord Developer Portal
    * Select scopes: `bot` and `applications.commands`
    * Select bot permissions:
@@ -61,7 +53,7 @@ CLIENT_ID=your_client_id_here
      * Use Voice Activity
    * Use the generated URL to invite the bot
 
-6. Start the bot
+5. Start the bot
 ```bash
 node index.js
 ```

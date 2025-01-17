@@ -101,7 +101,8 @@ class MusicBot {
             .on('error', this.handlePlayerError.bind(this))
             .on('playerError', this.handlePlayerConnectionError.bind(this))
             .on('playerStart', this.handlePlayerStart.bind(this))
-            .on('disconnect', this.handleDisconnect.bind(this));
+            .on('disconnect', this.handleDisconnect.bind(this))
+            .on('emptyChannel', this.handleEmptyQueue.bind(this));
     }
 
     //Check if its a command interaction or a button interaction
@@ -209,6 +210,11 @@ class MusicBot {
     async handleDisconnect(queue) {
         await disablePreviousMsgBtn(queue);
         await queue.metadata.channel.send({embeds: [descriptionEmbed(`No song are left in the queue, I have to leave now, I'll always be you skibidi pookie bear though! 😘`)]});
+    }
+
+    async handleEmptyQueue(queue) {
+        await disablePreviousMsgBtn(queue);
+        await queue.metadata.channel.send({embeds: [descriptionEmbed(`No one is in the channel, I have to leave now, I'll always be you skibidi pookie bear though! 😘`)]});
     }
 
     async login() {

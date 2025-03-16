@@ -59,6 +59,7 @@ module.exports = {
 
         } catch (e) {
             // let's return error if something failed
+            console.error(`Something went wrong\n`, e);
             await interaction.followUp({embeds: [descriptionEmbed(`Something went wrong : ${e}`)], ephemeral: true});
         }
     }

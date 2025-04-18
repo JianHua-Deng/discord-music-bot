@@ -3,6 +3,7 @@ const path = require('node:path');
 const { Client, GatewayIntentBits, REST, Routes, Collection} = require("discord.js");
 const { Player, useQueue } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
+//const { DeezerExtractor } = require("discord-player-deezer");
 const { DefaultExtractors } = require("@discord-player/extractor");
 const { validQueue, setRepeatMode, clearPlaylist, disablePreviousMsgBtn } = require('../utils/utils');
 const { createActionRow } = require('../utils/playbackButtons');
@@ -38,6 +39,7 @@ class MusicBot {
     async initializeBot() {
         // Register YouTube extractor
         this.player.extractors.register(YoutubeiExtractor, {});
+        //this.player.extractors.register(DeezerExtractor, {});
         await this.player.extractors.loadMulti(DefaultExtractors);
         
         // Set up event handlers

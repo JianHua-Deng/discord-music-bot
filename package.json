@@ -1,25 +1,51 @@
 {
   "name": "discord-music-bot",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.1.0",
+  "description": "A Discord music bot powered by discord.js and discord-player.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "check": "node --check index.js && node --check bot/music-bot.js && node --check commands/clear.js && node --check commands/loop.js && node --check commands/pause.js && node --check commands/play.js && node --check commands/search.js && node --check commands/skip.js && node --check utils/embedMsg.js && node --check utils/playbackButtons.js && node --check utils/playSong.js && node --check utils/utils.js",
+    "test": "npm run check"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@discord-player/extractor": "^7.1.0",
-    "@discordjs/voice": "^0.18.0",
-    "bgutils-js": "^3.2.0",
-    "discord-player": "^7.1.0",
-    "discord-player-youtubei": "^1.4.5",
-    "discord.js": "^14.16.1",
-    "dotenv": "^16.4.5",
-    "ffmpeg-static": "^5.2.0",
+    "@discordjs/voice": "^0.19.2",
+    "discord-player": "^7.2.0",
+    "discord-player-youtubei": "^2.0.0",
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2",
+    "ffmpeg-static": "^5.3.0",
     "mediaplex": "^1.0.0",
-    "nodemon": "^3.1.7",
-    "punycode": "^2.3.1",
-    "youtube-ext": "^1.1.25"
+    "youtube-dl-exec": "^3.1.13"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "discord-player-youtubei": {
+      "undici": "^7.29.0",
+      "youtubei.js": "^18.0.0"
+    },
+    "@discord-player/extractor": {
+      "file-type": "^21.3.1"
+    },
+    "soundcloud.ts": {
+      "undici": "^6.28.0"
+    },
+    "tsup": {
+      "esbuild": "^0.28.1"
+    },
+    "anymatch": {
+      "picomatch": "^2.3.2"
+    },
+    "readdirp": {
+      "picomatch": "^2.3.2"
+    }
   }
 }

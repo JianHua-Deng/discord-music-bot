@@ -5,7 +5,7 @@ const { descriptionEmbed } = require('./embedMsg');
 
 //Check if queue has been initialized, and if its playing
 function validQueue(queue){
-    if (!queue || !queue.isPlaying()){
+    if (!queue || !queue.currentTrack){
         return false;
     }
     return true;
@@ -14,11 +14,11 @@ function validQueue(queue){
 const updateButtons = async (queue) => {
     if (queue) {
         try{
-            queue.metadata.latestMessage.edit({
+            await queue.metadata.latestMessage?.edit({
                 components: [createActionRow(queue.guild.id , false)]
             })
         } catch (error) {
-            
+            console.error('Failed to update playback buttons:', error);
         }
     }
     
@@ -47,6 +47,8 @@ const setRepeatMode = async (interaction, queue, repeatType) => {
                 queue.setRepeatMode(QueueRepeatMode.QUEUE);
                 loopStatus = "Looping playlist";
             }
+        } else {
+            loopStatus = "Unknown loop mode";
         }
 
         //await interaction.deferUpdate();
@@ -55,16 +57,16 @@ const setRepeatMode = async (interaction, queue, repeatType) => {
         return loopStatus; //return loopStatus in the case when user uses command to control loop mode with loop.js
 
     } catch (error) {
-        return interaction.reply({embeds: [descriptionEmbed(`Failed to clear playlist: ${error.message}`)]});
+        return `Failed to update loop mode: ${error.message}`;
     }
 }
 
 const clearPlaylist = async (interaction, queue) => {
     try{
         queue.clear();
-        await interaction.reply({ embeds: [descriptionEmbed(`Cleared queue after current Song. Let me be your little pookie bear now 😘`)], ephemeral: true });
+        await interaction.reply({ embeds: [descriptionEmbed(`Cleared the queue after the current song.`)], ephemeral: true });
     } catch (error){
-        await interaction.reply({ embeds: [descriptionEmbed(`Failed to clear playlist: ${error.message}`)]});
+        await interaction.reply({ embeds: [descriptionEmbed(`Failed to clear playlist: ${error.message}`)], ephemeral: true });
     }
 }
 

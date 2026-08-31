@@ -17,7 +17,7 @@ A feature-rich Discord music bot built with discord.js and discord-player that p
 
 ### Prerequisites
 
-* Node.js 16.9.0 or higher
+* Node.js 22.12.0 or higher
 * npm (comes with Node.js)
 * Discord account and a server where you have admin permissions
 
@@ -29,20 +29,35 @@ A feature-rich Discord music bot built with discord.js and discord-player that p
    * Go to the "Bot" section and click "Add Bot"
    * Copy the bot token
    * Go to OAuth2 and copy the client ID
-   * Under "Privileged Gateway Intents", enable:
-     * Server Members Intent
-     * Message Content Intent
-     * Voice State Intent
+   * No privileged gateway intents are required. The bot only uses guild and voice-state events.
 
 2. Clone the repository
 
-3. Create a `.env` file in the root directory
+3. Install dependencies
+```bash
+npm install
+```
+
+4. Create a `.env` file in the root directory
 ```env
 TOKEN=your_bot_token_here
 CLIENT_ID=your_client_id_here
+GUILD_ID=optional_dev_server_id
+YT_COOKIE=optional_youtube_cookie
+YT_USE_YTDLP=true
+YTJS_LOG_LEVEL=ERROR
+YT_PARSER_WARNINGS=false
 ```
 
-4. Invite the bot to your server
+`GUILD_ID` registers slash commands instantly to one server. If omitted, the bot registers commands for every server it is in after login.
+
+`YT_COOKIE` is optional for ordinary public videos, but recommended because YouTube often blocks unauthenticated third-party playback. Treat it like a password.
+
+`YT_USE_YTDLP=true` uses the yt-dlp based stream path. Keep it enabled unless you are specifically debugging the direct YouTube stream extractor.
+
+`YTJS_LOG_LEVEL=ERROR` and `YT_PARSER_WARNINGS=false` keep noisy nonfatal YouTube parser messages out of the console.
+
+5. Invite the bot to your server
    * Go to OAuth2 > URL Generator in Discord Developer Portal
    * Select scopes: `bot` and `applications.commands`
    * Select bot permissions:
@@ -53,19 +68,23 @@ CLIENT_ID=your_client_id_here
      * Use Voice Activity
    * Use the generated URL to invite the bot
 
-5. Start the bot
+6. Start the bot
 ```bash
-node index.js
+npm start
+```
+
+For development with restart-on-change:
+```bash
+npm run dev
 ```
 
 ## Commands
 
-* `/play <song>` - Play a song or add it to queue
+* `/play <song>` - Play the first matching result immediately. Pasted YouTube links play directly.
+* `/search <song>` - Search YouTube and choose a result from a menu.
 * `/skip` - Skip current song
-* `/queue` - View current playlist
 * `/loop <type>` - Loop current song or playlist
 * `/clear` - Clear current playlist
-* `/stop` - Stop playback and clear queue
 
 ## Interactive Controls
 
@@ -80,7 +99,8 @@ node index.js
 * **Bot won't start**: Check if your `.env` file contains correct token and client ID
 * **No audio**: Verify bot has correct voice channel permissions
 * **Commands not working**: Ensure bot has necessary permissions and intents are enabled
-* **Gateway Intent error**: Double-check that all required intents are enabled in Developer Portal
+* **YouTube search works but playback fails**: Keep `YT_USE_YTDLP=true`, refresh `YT_COOKIE`, and restart the bot
+* **Dependency issues**: Run `npm install`, then `npm test` to verify the local install
 
 ## Acknowledgments
 

@@ -12,23 +12,24 @@ module.exports = {
     async execute(interaction){
         const channel = interaction.member.voice.channel;
         if (!channel){
-            return interaction.reply({embeds: [descriptionEmbed("What are you trying to pause, you aren't even in a voice channel lil bro 🫵😂")]});
+            return interaction.reply({ embeds: [descriptionEmbed("Join a voice channel before using /pause.")], ephemeral: true });
         }
 
         const queue = useQueue(interaction.guild.id);
 
         if (!validQueue(queue)){
-            return interaction.reply({embeds: [descriptionEmbed("No song is currently in queue, you pasuing nothin lil bro 🫵😂")]});
+            return interaction.reply({ embeds: [descriptionEmbed("No song is currently playing.")], ephemeral: true });
         }
 
         try {
             queue.node.setPaused(!queue.node.isPaused());
-            await interaction.update({
-                content : queue.node.isPaused() ? `Paused ${queue.currentTrack}` : `Playing ${queue.currentTrack}`,
-                components : [createActionRow(interaction.guild.id, false)]
+            await interaction.reply({
+                embeds: [descriptionEmbed(queue.node.isPaused() ? `Paused ${queue.currentTrack.title}` : `Resumed ${queue.currentTrack.title}`)],
+                components: [createActionRow(interaction.guild.id, false)],
+                ephemeral: true
             });
         } catch (error) {
-            return interaction.reply({embeds: [descriptionEmbed(`Failed to clear playlist: ${error.message}`)], ephemeral: true});
+            return interaction.reply({ embeds: [descriptionEmbed(`Failed to pause or resume: ${error.message}`)], ephemeral: true });
         }
 
 

@@ -12,14 +12,14 @@ module.exports = {
 
         const channel = interaction.member.voice.channel;
         if (!channel){
-            return interaction.reply({embeds: [descriptionEmbed("You are not even connected to a voice channel, what are you trying to skip lil bro 🫵😂")]});
+            return interaction.reply({ embeds: [descriptionEmbed("Join a voice channel before using /skip.")], ephemeral: true });
         }
 
         const queue = useQueue(interaction.guild.id);
         
 
         if (!validQueue(queue)){
-            return interaction.reply({embeds: [descriptionEmbed("No Song is Currently Playing, you skippin nothin lil bro 🫵😂")]});
+            return interaction.reply({ embeds: [descriptionEmbed("No song is currently playing.")], ephemeral: true });
         }
 
         try {
@@ -37,9 +37,9 @@ module.exports = {
             .setThumbnail(currentSong.thumbnail)
 
             await queue.node.skip();
-            await interaction.reply({embeds: [embed]});
+            await interaction.reply({ embeds: [embed] });
         } catch (error){ 
-            return interaction.reply({embeds: [descriptionEmbed(`Failed to skip Song: ${error.message}`)]});
+            return interaction.reply({ embeds: [descriptionEmbed(`Failed to skip song: ${error.message}`)], ephemeral: true });
         }
 
 

@@ -1,10 +1,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, GatewayIntentBits, REST, Routes, Collection} = require("discord.js");
+const ffmpegPath = require('ffmpeg-static');
+const { Client, GatewayIntentBits, REST, Routes, Collection, Events } = require("discord.js");
 const { Player, useQueue } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
+const { Log: YouTubeLog, Parser: YouTubeParser } = require('youtubei.js');
 //const { DeezerExtractor } = require("discord-player-deezer");
-const { DefaultExtractors } = require("@discord-player/extractor");
 const { validQueue, setRepeatMode, clearPlaylist, disablePreviousMsgBtn } = require('../utils/utils');
 const { createActionRow } = require('../utils/playbackButtons');
 const { skipEmbedMsg, playStartEmbedMsg, descriptionEmbed } = require('../utils/embedMsg');
@@ -14,11 +15,11 @@ class MusicBot {
     constructor() {
         this.token = process.env.TOKEN;
         this.clientId = process.env.CLIENT_ID;
+        this.guildId = process.env.GUILD_ID;
         
         this.client = new Client({
             intents: [
                 GatewayIntentBits.GuildVoiceStates,
-                GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.Guilds
             ]
         });
@@ -26,21 +27,32 @@ class MusicBot {
         this.client.commands = new Collection();
         
         this.player = new Player(this.client, {
-            ytdlOptions: {
-                quality: "highestaudio",
-                highWaterMark: 1 << 25
-            },
             connectionTimeout: 120000,
+            ffmpegPath,
+            skipFFmpeg: false,
         });
 
         this.initializeBot();
     }
 
     async initializeBot() {
-        // Register YouTube extractor
-        this.player.extractors.register(YoutubeiExtractor, {});
+        this.setupYouTubeLogging();
+        this.setupExtractorEvents();
+
+        const youtubeOptions = {
+            streamOptions: {
+                highWaterMark: 1 << 25,
+            },
+            useYoutubeDL: process.env.YT_USE_YTDLP !== 'false',
+            logLevel: process.env.YT_LOG_LEVEL || 'NONE',
+        };
+
+        if (process.env.YT_COOKIE) {
+            youtubeOptions.cookie = process.env.YT_COOKIE;
+        }
+
+        await this.player.extractors.register(YoutubeiExtractor, youtubeOptions);
         //this.player.extractors.register(DeezerExtractor, {});
-        await this.player.extractors.loadMulti(DefaultExtractors);
         
         // Set up event handlers
         this.setupClientEvents();
@@ -48,6 +60,28 @@ class MusicBot {
         
         // Login
         await this.login();
+    }
+
+    setupYouTubeLogging() {
+        const levels = YouTubeLog.Level;
+        const levelName = (process.env.YTJS_LOG_LEVEL || 'ERROR').toUpperCase();
+        const level = levels[levelName] ?? levels.ERROR;
+
+        YouTubeLog.setLevel(level);
+        YouTubeParser.setParserErrorHandler((error) => {
+            const shouldLogParserWarning = process.env.YT_PARSER_WARNINGS === 'true';
+            const isKnownNonFatalParserWarning = ['class_not_found', 'class_changed'].includes(error.error_type);
+
+            if (shouldLogParserWarning || !isKnownNonFatalParserWarning) {
+                console.warn(`[YOUTUBEJS][Parser] ${error.classname}: ${error.error_type}`);
+            }
+        });
+    }
+
+    setupExtractorEvents() {
+        this.player.extractors.on('error', (_context, extractor, error) => {
+            console.error(`Extractor ${extractor.identifier} failed:`, error);
+        });
     }
 
     async loadCommands() {
@@ -72,15 +106,15 @@ class MusicBot {
 
         try {
             console.log(`Started refreshing ${commands.length} application (/) commands.`);
-            const guilds = this.client.guilds.cache.map(guild => guild.id);
+            const guilds = this.guildId ? [this.guildId] : this.client.guilds.cache.map(guild => guild.id);
 
             for (const id of guilds) {
                 try {
                     const data = await rest.put(
-                        Routes.applicationCommands(this.clientId, id),
+                        Routes.applicationGuildCommands(this.clientId, id),
                         { body: commands }
                     );
-                    console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+                    console.log(`Successfully reloaded ${data.length} application (/) commands for guild ${id}.`);
                 } catch (error) {
                     console.log(`Error deploying command for ${id}`, error);
                 }
@@ -91,7 +125,7 @@ class MusicBot {
     }
 
     setupClientEvents() {
-        this.client.once("ready", async () => {
+        this.client.once(Events.ClientReady, async () => {
             console.log(`Bot is ready as ${this.client.user.tag}!`);
             await this.loadCommands();
             await this.deployCommands();
@@ -111,8 +145,10 @@ class MusicBot {
 
     //Check if its a command interaction or a button interaction
     async handleInteraction(interaction) {
-        if (interaction.isCommand()) {
+        if (interaction.isChatInputCommand()) {
             await this.handleCommandInteraction(interaction);
+        } else if (interaction.isStringSelectMenu()) {
+            await this.handleStringSelectMenuInteraction(interaction);
         } else if (interaction.isButton()) {
             await this.handleButtonInteraction(interaction);
         }
@@ -143,12 +179,49 @@ class MusicBot {
         }
     }
 
+    async handleStringSelectMenuInteraction(interaction) {
+        const [commandName] = interaction.customId.split(':');
+        const command = this.client.commands.get(commandName);
+
+        if (!command || typeof command.handleSelection !== 'function') {
+            await interaction.reply({ embeds: [descriptionEmbed('Unknown menu interaction.')], ephemeral: true });
+            return;
+        }
+
+        try {
+            await command.handleSelection(interaction);
+        } catch (error) {
+            console.error(`Select menu failed for ${interaction.customId}:`, error);
+            const response = {
+                embeds: [descriptionEmbed(`Failed to handle menu selection: ${error.message}`)],
+                ephemeral: true,
+            };
+
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(response);
+            } else {
+                await interaction.reply(response);
+            }
+        }
+    }
+
     async handleButtonInteraction(interaction) {
         const { customId } = interaction;
         const queue = useQueue(interaction.guild.id);
         const channel = interaction.member.voice.channel;
 
-        if (!validQueue(queue) || !channel) {
+        if (!validQueue(queue)) {
+            await interaction.reply({ embeds: [descriptionEmbed('Nothing is playing right now.')], ephemeral: true });
+            return;
+        }
+
+        if (!channel) {
+            await interaction.reply({ embeds: [descriptionEmbed('Join the voice channel before using playback controls.')], ephemeral: true });
+            return;
+        }
+
+        if (queue.channel && channel.id !== queue.channel.id) {
+            await interaction.reply({ embeds: [descriptionEmbed('You need to be in my voice channel to use playback controls.')], ephemeral: true });
             return;
         }
 
@@ -160,7 +233,7 @@ class MusicBot {
             'skip': async () => {
                 const currentSong = queue.currentTrack;
                 queue.node.skip();
-                await interaction.reply({embeds: [skipEmbedMsg(currentSong, queue.metadata.requester)]});
+                await interaction.reply({ embeds: [skipEmbedMsg(currentSong, interaction.user)] });
             },
             'loopSong': async () => {
                 await setRepeatMode(interaction, queue, 'song');
@@ -180,11 +253,17 @@ class MusicBot {
                 await buttonHandlers[customId]();
             } else {
                 console.log('Unknown button pressed:', customId);
-                await interaction.reply({ embeds: ['Unknown button interaction'], ephemeral: true });
+                await interaction.reply({ content: 'Unknown button interaction', ephemeral: true });
             }
         } catch (error) {
             console.error(error);
-            await interaction.reply({ embeds: [`Failed to execute ${customId} action`], ephemeral: true });
+            const response = { embeds: [descriptionEmbed(`Failed to execute ${customId} action: ${error.message}`)], ephemeral: true };
+
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(response);
+            } else {
+                await interaction.reply(response);
+            }
         }
     }
 
@@ -213,22 +292,28 @@ class MusicBot {
 
     async handleDisconnect(queue) {
         await disablePreviousMsgBtn(queue);
-        await queue.metadata.channel.send({embeds: [descriptionEmbed(`No song are left in the queue, I have to leave now, I'll always be you skibidi pookie bear though! 😘`)]});
+        await queue.metadata.channel.send({ embeds: [descriptionEmbed(`No songs are left in the queue, so I left the voice channel.`)] });
     }
 
     async handleEmptyQueue(queue) {
         await disablePreviousMsgBtn(queue);
-        await queue.metadata.channel.send({embeds: [descriptionEmbed(`No one is in the channel, I have to leave now, I'll always be you skibidi pookie bear though! 😘`)]});
+        await queue.metadata.channel.send({ embeds: [descriptionEmbed(`The voice channel is empty, so I left.`)] });
     }
 
     async login() {
         try {
+            if (!this.token || !this.clientId) {
+                throw new Error('Missing TOKEN or CLIENT_ID in environment.');
+            }
+
             await this.client.login(this.token);
         } catch (e) {
             if (e.message === 'An invalid token was provided.') {
-                console.error('❌ Invalid Token Provided! ❌ \nChange the token in the .env file.\n');
+                console.error('Invalid token provided. Change TOKEN in the .env file.');
+            } else if (e.message === 'Missing TOKEN or CLIENT_ID in environment.') {
+                console.error(`${e.message} Create a .env file from .env.example and fill in the values.`);
             } else {
-                console.error('❌ An error occurred while trying to login to the bot! ❌\n', e);
+                console.error('An error occurred while trying to login to the bot:\n', e);
             }
             process.exit(1);
         }

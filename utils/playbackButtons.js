@@ -2,10 +2,7 @@ const {ActionRowBuilder, ButtonBuilder, ButtonStyle} = require('discord.js');
 const { useQueue, QueueRepeatMode } = require('discord-player');
 
 function checkRepeatMode(mode, matchMode){
-    if (mode === matchMode){
-        return true;
-    }
-    return false;
+    return mode === matchMode;
 }
 
 function createButton(id, label, style, disable){

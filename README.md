@@ -78,6 +78,26 @@ For development with restart-on-change:
 npm run dev
 ```
 
+## Windows Auto-Start
+
+Use `start-bot.cmd` with Task Scheduler if you want the bot to launch automatically.
+
+Task Scheduler action:
+
+* Program/script: `C:\Windows\System32\cmd.exe`
+* Add arguments: `/c ""C:\path\to\discord-music-bot\start-bot.cmd""`
+* Start in: `C:\path\to\discord-music-bot`
+
+For first setup, use **Run only when user is logged on**. After that works, you can switch the task to **Run whether user is logged on or not** or run it as `SYSTEM`.
+
+Startup logs are written to:
+
+```text
+C:\path\to\discord-music-bot\bot-startup.log
+```
+
+Replace `C:\path\to\discord-music-bot` with the folder where you cloned this repository.
+
 ## Commands
 
 * `/play <song>` - Play the first matching result immediately. Pasted YouTube links play directly.

@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="$SCRIPT_DIR/logs"
-LOG_FILE="$LOG_DIR/bot-$(date +%Y-%m-%d).log"
+export PATH="/c/Program Files/Git/usr/bin:/c/Program Files/Git/bin:/c/Program Files/nodejs:$PATH"
 
-mkdir -p "$LOG_DIR"
+SCRIPT_DIR="/c/Users/dengj/Desktop/Personal Projects/discord-music-bot"
+LOG_FILE="$SCRIPT_DIR/bot-startup.log"
+NPM_CMD="/c/Program Files/nodejs/npm.cmd"
+NODE_CMD="/c/Program Files/nodejs/node.exe"
+
 cd "$SCRIPT_DIR"
 
 {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Discord music bot"
     echo "Working directory: $SCRIPT_DIR"
-    echo "Node: $(node --version 2>/dev/null || echo 'not found')"
-    echo "npm: $(npm --version 2>/dev/null || echo 'not found')"
+    echo "Node: $("${NODE_CMD}" --version 2>/dev/null || echo 'not found')"
+    echo "npm: $("${NPM_CMD}" --version 2>/dev/null || echo 'not found')"
 } >> "$LOG_FILE"
 
-if ! command -v npm >/dev/null 2>&1; then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] npm was not found on PATH" >> "$LOG_FILE"
+if [[ ! -x "$NODE_CMD" || ! -f "$NPM_CMD" ]]; then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Node or npm was not found at C:\\Program Files\\nodejs" >> "$LOG_FILE"
     exit 1
 fi
 
-exec npm start >> "$LOG_FILE" 2>&1
+exec "$NPM_CMD" start >> "$LOG_FILE" 2>&1
